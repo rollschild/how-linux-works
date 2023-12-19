@@ -151,4 +151,96 @@
 - `TSTP` & `CONT` signals
 - If a program tries to read from stdin while it's in the background, it can freeze/terminate
   - try to `fg` to bring it back
+
+### File Modes and Permissions
+
+#### Permissions
+
+- `s` permission (instead of `x`): the executable is **setuid**
+  - when the program is executed, it runs as though the file owner is the user instead of you
+  - run as root in order to get the privileges needed to change system files
+  - e.g. `paswd` - needs to change `/etc/passwd`
+- To change,
+  - `chmod <group/user>+<permission> file`
+  - `chmod <group/user>-<permission> file`
+- You can _only_ access a file in a directory _if_ the directory is executable
+- `umask` - applies a predefined set of permissions to any new file created by you
+  - `<mask>` - permission bits that should _NOT_ be set on a newly created file
+  - **logical complement**!!!
+  - sets to `<mask> & 0777`
+  - Use `umask 022` if you want everyone to be able to see all files & directories
+  - Use `umask 077` if you do _NOT_ want anyone to be able to see all files & directories
+
+#### Symbolic Links
+
+- `<file_pointed_to>` does _NOT_ have to mean anything
+  - does _NOT_ need to exist
+- from `target` to `linkname`
+  - `ln -s target linkname`
+  - `target` - file/directory `linkname` points to
+
+### Archiving and Compressing Files
+
+- `gzip` and `tar`
+
+#### `gzip`
+
+- _ONLY_ compress, does _NOT_ archive
+  - i.e. does _NOT_ pack multiple files/directories into a single one
+- to compress, `gzip <file>`
+- to unzip, `gunzip <file.gz>`
+
+#### `tar`
+
+- to create an archive - `tar cvf <archive>.tar file1 file2 ...`
+- Flags
+  - `c` - create mode
+  - `v` - verbose
+  - `f` - file option
+    - followed by the file name to create
+    - to use stdin/stdout, set filename to `-`
+  - `x` - extract mode
+- To unpack `.tar` file, `tar xvf <archive>.tar`
+  - does _NOT_ remove the archived `.tar` file after extraction
+- **Table-of-Contents Mode**
+  - using flag `t` instead of `x`
+  - check the contents of a `.tar` file _before_ unpacking
+- Consider using `-p` when _unpacking_
+  - preserves permissions
+  - default under superuser
+
+#### `.tar.gz` - Compressed Archives
+
+- `gunzip` first
+- then `tar xvf`
+
+#### `zcat`
+
+- Combine archival and compression functions with a pipeline
+- `zcat file.tar.gz | tar xvf -`
+- `zcat` - `gunzip -dc`
+  - `-d` - decompress
+  - `-c` - send result to standard output
+- `tar` has a shortcut for `zcat`
+  - `tar ztvf file.tar.gz`
+- `.tgz` file === `.tar.gz` file
+
+### Linux Directory Hierarchy
+
+- `/usr` - where most of the user space programs and data reside
+  - `/usr/local`
+  - `/usr/share`
+- Kernel location
+  - `/vmlinuz` or `/boot/vmlinuz`
+  - boot loader loads this file into memory and sets it in motion when system boots
+- Once boo loader starts the kernel, the main kernel file is no longer used by the running system
+  - however, `loadable kernel modules` - modules loaded/unloaded by kernel
+  - `/lib/modules`
+
+### Superuser
+
+- `/etc/sudoers`
+- Use `visudo` to edit `/etc/sudoers`
+- checks for syntax errors _after_ saving the file
+- To check `sudo` logs, `journalctl SYSLOG_IDENTIFIER=sudo`
 -
