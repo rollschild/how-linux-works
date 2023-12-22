@@ -243,4 +243,197 @@
 - Use `visudo` to edit `/etc/sudoers`
 - checks for syntax errors _after_ saving the file
 - To check `sudo` logs, `journalctl SYSLOG_IDENTIFIER=sudo`
--
+
+## Devices
+
+### Device Files
+
+- **device files** a.k.a. **device nodes**
+  - under `/dev`
+- `echo blah > /dev/null`
+- File modes for devices:
+  - `b` - block
+  - `c` - character
+  - `p` - pipe
+  - `s` - socket
+- Major vs. minor device numbers
+- _NOT all_ devices have device files
+  - e.g. network interfaces
+
+#### Block Device
+
+- data accessed in fixed chunks
+- quick random access
+- fixed size
+- disks
+
+#### Character Device
+
+- data streams
+- no fixed size
+- printer
+
+#### Pipe Device
+
+- like character devices, but
+  - with _another process_ at the other end of the I/O stream instead of kernel driver
+
+#### Socket Device
+
+- special-purpose interfaces for interprocess communication
+- outside of `/dev`
+
+### sysfs
+
+- kernel assigns devices in the order in which devices are found
+  - a device may have different names between reboots!
+- the **sysfs** interface - provided by kernel
+  - to provide uniform view for attached devices based on their _actual_ hardware attributes
+  - path under `/sys/devices/`
+- `/dev/` enables user processes to use the device
+- `/sys/devices/` is used to view information and manage the device
+- Use `udevadm` to show the sys path of a device under `/dev/`
+  - `udevadm info --query=all --name=/dev/sda`
+
+### `dd`
+
+- `dd`
+  - read from an input file/stream
+  - write to an output file/stream
+- `dd` copies data in blocks of fixed size
+- uses an old IBM Job Control Language (JCL) syntax
+
+### Device Name Summary
+
+- To find the name of a device (when partitioning a disk)
+  - query udevd using `udevadm` - the _ONLY_ reliable way
+  - look for the device under `/sys/`
+  - guess from the output of `journalctl -k`
+    - prints kernel messages
+  - guess from the output of kernel system log
+  - if disk device already visible to system, check output of `mount`
+  - run `cat /proc/devices` to see block/character devices for which the system has drivers
+
+#### Hard Disks `/dev/sd*`
+
+- `/dev/sda`, `/dev/sdb` etc - _entire_ disks
+- `/dev/sda1`, `/dev/sda2`, etc - **partitions**
+- `sd` - SCSI disk
+  - **Small Computer System Interface (SCSI)**
+- `lsscsi` - list SCSI devices
+- Linux uses **Universally Unique Identifier (UUID)** and **Logical Volume Manager (LVM)** to maintain stable disk device mapping
+
+#### Virtual Disks `/dev/xvd*` & `/dev/vd*`
+
+- for virtual machines
+
+#### Non-Volatile Memory Devices: `/dev/nvme*`
+
+- talking to solid state storage
+- `nvme list`
+
+#### Device Mapper `/dev/dm-*` & `/dev/mapper/`
+
+- **LVM**: a level up from disks and other direct block storage on some systems
+
+#### CD/DVD drives `/dev/sr*`
+
+- optical storage drives _might_ show up as PATA devices
+- `/dev/sr*` devices are _read only_
+- To write/rewrite optical devices, use "generic" SCSI devices such as `/dev/sg0`
+
+#### PATA Hard Disks `/dev/hd*`
+
+- **PATA (Parallel ATA)**
+- `/dev/hda`, `/dev/hdb`, `/dev/hdc`, `/dev/hdd`
+- If a SATA device recognized as PATA - it's running in compatibility mode
+  - hindered performance
+  - check your BIOS
+
+#### Terminals: `/dev/tty*`, `/dev/pts/`, `/dev/tty`
+
+- **Terminal** - device for moving characters between a user process and an I/O device
+- _Most_ terminals are **pseudoterminal** devices
+- Two common terminals:
+  - `/dev/tty1` - the first virtual console
+  - `/dev/pts/0` - the first pseudoterminal device
+- `/dev/tty` - the controlling terminal of the current process
+- use `getty` to launch a virtual console?
+- force changing console: `# chvt 1` - switch to `tty1`
+
+#### Audio Devices: `/dev/snd/*`, `/dev/dsp`, `/dev/audio`, etc
+
+- Two sets of audio devices
+  - **Advanced Linux Sound Architecture (ALSA)** - in `/dev/snd/`
+  - **Open Sound System (OSS)**
+    - computer will play any WAV file sent to `/dev/dsp`
+
+#### Device File Creation
+
+- You normally do _NOT_ create device files
+  - created by **devtmpfs** and **udev**
+- To manually create:
+  - `mknod` - creates one device
+    - `# mknod /dev/sda1 b 8 1`
+      - block
+      - major number 8
+      - minor number 1
+- Each system has a `MAKEDEV` program in `/dev/` to create groups of devices
+
+### udev
+
+#### devtmpfs
+
+- the **devtmpfs filesystem** developed in response to the problem of device availability during boot
+- kernel create device files as necessary, but also notifies udevd a new device is available
+- udevd, upon receiving the signal, does _not_ create the device files, but
+  - performs device initialization
+  - sets permissions
+  - notifies other processes that new devices are available
+  - creates a number of symbolic links in `/dev/`
+    - look for them in `/dev/disk/by-id/`
+- the **tmp** in devtmpfs:
+  - the filesystem resides in main memory,
+  - with read/write capability by user-space processes
+
+#### udevadm
+
+- admin tool for udevd
+- search for and explore system devices
+- monitor uevents as udevd receives them from kernel
+
+#### Device Monitoring
+
+- `udevadm monitor`
+- `udevadm monitor --kernel --subsystem-match=scsi`
+  - see only kernel messages pertaining to changes in SCSI subsystem
+- **udisksd** - daemon that listens for events in order to
+  - automatically attach disks
+  - notify other processes that new disks are available
+
+### SCSI and Linux Kernel
+
+- computer <-> SCSI Host Aapter <-> Devices
+- **Serial Attached SCSI (SAS)**
+  - newer version of SCSI
+  - better performance
+- Most likely USB storage devices that use SCSI commands
+- SATA disks appear as SCSI devices
+  - but most of them communicate through a translation layer
+- NVMe devices are _NOT_ SCSI
+  - but they could show up in `lsscsi` as adapter number `N`
+- For any given device file on the system, kernel _almost always_ uses
+  - one top-layer driver, and
+  - one lower-layer driver
+
+#### USB Storage and SCSI
+
+- Linux kernel includes a three-layer USB subsystem closely resembling the SCSI subsystem
+  - device-class driver
+  - bus management core
+  - host controller driver
+- `lsusb`
+
+#### Generic SCSI Devices
+
+- `lsscsi -g`
