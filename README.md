@@ -437,3 +437,157 @@
 #### Generic SCSI Devices
 
 - `lsscsi -g`
+
+## Disks And Filesystems
+
+- **partition table**
+  - where partitions are defined
+  - a.k.a. **disk label**
+- **Logical Volume Manager (LVM)**
+
+### Partitioning Disk Devices
+
+- traditionally, partition table is inside **Master Boot Record (MBR)**
+- newer systems use **Globally Unique Identifier Table (GPT)**
+- `parted` & `fdisk`
+
+#### MBR
+
+- contains the following partitions:
+  - primary
+  - extended
+  - logical
+- MBR has limit of 4 primary partitions
+  - if more needed, one of them needs to be designated as **extended partition**
+- extended partition breaks down into **logical partitions**
+- `fdisk -l` - view system ID for an MBR
+
+#### LVM Partitions
+
+- partition labeled as LVM - partition type `8e`
+- device named `/dev/dm-*`
+- references to "device mapper"
+
+#### Initial Kernel Read
+
+- output like: `sda: sda1 sda2 < sda 5 >`
+  - `/dev/sda2` is an extended partition containing one logical partition, `/dev/sda5`
+
+#### Disk and Partition Geometry
+
+- **cylinder-head-sector**
+- **Logical Block Addressing (LBA)**
+
+#### SSD
+
+- **partition alignment**
+- data read in **chunks**
+- check partition boundary: `cat /sys/block/sdf/sdf2/start`
+
+### File Systems
+
+- **9P** from Plan 9
+- **File System in User Space (FUSE)** - allows user-space filesystems in Linux
+- **VFS (Virtual File System)**
+  - allows Linux to support wide range of filesystems
+- Use `mkfs` to create a filesystem
+- `/mnt` - temporary mount point
+- Mount filesystems by UUID
+  - `blkid`
+- Linux _buffers_ writes to the disk
+- when unmounting using `unmount`, kernel _automatically_ synchronizes with the disk
+  - writes the changes in buffer to the disk
+  - can be forced using `sync`
+- Difference between Unix & DOS text files - how lines end
+  - Unix - only a linefeed `\n` marks the end of line
+  - DOS - carriage return `\r` _followed by_ linefeed `\n`
+- `/etc/fstab`
+  - permanent list of filesystems & options
+  - for mounting at boot time
+  - maintained by the system
+  - Simultaneously mount all entries in `/etc/fstab`
+    - that do _NOT_ contain `noauto`
+    - `# mount -a`
+  - options:
+    - `errors`
+    - `noauto`
+    - `user`
+    - `defaults`
+- `df` - view size & utilization of the currently mounted filesystems
+  - `df <dir>`
+  - e.g. `df .` - device holding the current directory
+  - normally a certain percent (5%) of the total **capacity** is unaccounted for
+    - **reserved** blocks
+    - _only_ superuser can use
+    - prevents system servers from immediately failing when run out of disk space
+- `du` - disk usage of _every_ directory in the directory hierarchy
+- POSIX defines a block size of **512** bytes
+  - by default `df` and `du` output in 1024-byte blocks
+  - use `POSIXLY_CORRECT` to display in 512-byte
+- `fsck` - filesystem check
+  - `e2fsck` for ext2/ext3/ext4
+  - _NEVER_ use `fsck` on a _mounted_ filesystem!!!
+  - `fsck -p` - auto fix ordinary problems
+    - run by Linux at boot time
+  - `fsck -n` - check the filesystem _without_ modifying anything
+- normally `ext3` & `ext4` do not need to be checked manually
+  - because they have **journals**
+- `debugfs` - look through files on the filesystem and copy them elsewhere
+  - opens filesystem in read-only mode
+- Special filesystems
+  - `proc` - mounted on `/proc`
+  - `sysfs` - mounted on `/sys`
+  - `tmpfs` - mounted on `/run` and others
+  - `squashfs` - `/snap`
+  - `overlay`
+
+### Swap Space
+
+- Pieces of idle programs swapped to the disk in exchange for active pieces residing on disk
+- **swap space** - disk area used to store memory pages
+- `free` - current swap usage in kb
+
+#### Determine How Much Swap You Need
+
+- Twice as real memory
+
+### Logical Volume Manager
+
+- `lvm`
+- `vgs` - shows the volumes groups currently configured
+- `lvs` - show logical volumes
+- Once set up, logical volume block devices are available at
+  - `/dev/dm-0`
+  - `/dev/dm-1`
+  - so on...
+- `/dev/mapper/` - additional location for symbolic links
+
+### Disk and User Space
+
+- Kernel handles raw block I/O from devices
+- User-space tools use the block I/O through device files
+  - but _only_ for initializing operations
+  - partitioning
+  - filesystem creation
+  - swap space creation
+
+### Inside a Traditional Filesystem
+
+- Two primary components:
+  - pool of data blocks - to store data
+  - database system that manages the data pool
+    - **inode** data structure
+- **inode**
+  - a set of data that describes a particular file
+- for any ext2/3/4 filesystem, start at inode `#2`, the **root node**
+- `ls -i` - view inode numbers
+- **unlinking**
+- **block bitmap**
+  - for the filesystem to determine which blocks are in use and which are free
+  - 0 is free
+  - 1 is in use
+- when checking a filesystem, `fsck` walks through the inode table and directory structure
+  - generates new link counts and a new block bitmap
+  - compares with the filesystem on disk
+  - make orphans in the filesystems's `lost+found` directory
+-
