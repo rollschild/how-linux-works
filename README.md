@@ -589,5 +589,96 @@
 - when checking a filesystem, `fsck` walks through the inode table and directory structure
   - generates new link counts and a new block bitmap
   - compares with the filesystem on disk
-  - make orphans in the filesystems's `lost+found` directory
--
+  - make orphans in the filesystem's `lost+found` directory
+
+## How Linux Kernel Boots
+
+### Overview
+
+1. Machine's BIOS or boot firmware loads & runs boot loader
+2. Boot loader finds the kernel image on disk, loads it into _memory_, and starts it
+3. Kernel initializes devices and drivers
+4. Kernel mounts the root filesystem
+5. Kernel starts the `init` program, with PID of 1 - **user space start**
+6. `init` sets rest of the system processes in motion
+7. `init` at some point starts a process allowing for user log in - usually at (or near) end of boot sequence
+
+### Startup Messages
+
+- `journalctl` - best way to view kernel's boot & runtime diagnostic messages
+  - `journalctl -k` - for the current boot
+  - `journalctl -b` - previous boots
+- `dmesg` - view kernel messages in the **kernel ring buffer**
+- **systemd** captures diagnostic messages from startup & runtime that would normally go to the console
+
+### Kernel Initialization and Boot Options
+
+- Order:
+  1. CPU inspection
+  2. Memory inspection
+  3. Device bus discovery
+  4. Device discovery
+  5. Auxiliary kernel subsystem setup (networking etc)
+  6. Root filesystem mount
+  7. User space start
+- Example from my `journalctl -k`:
+
+```
+Jan 07 15:55:20 nixos kernel: Freeing unused decrypted memory: 2028K
+Jan 07 15:55:20 nixos kernel: Freeing unused kernel image (initmem) memory: 2956K
+Jan 07 15:55:20 nixos kernel: Write protecting the kernel read-only data: 24576k
+Jan 07 15:55:20 nixos kernel: Freeing unused kernel image (rodata/data gap) memory: 988K
+Jan 07 15:55:20 nixos kernel: x86/mm: Checked W+X mappings: passed, no W+X pages found.
+Jan 07 15:55:20 nixos kernel: Run /init as init process
+Jan 07 15:55:20 nixos kernel:   with arguments:
+Jan 07 15:55:20 nixos kernel:     /init
+Jan 07 15:55:20 nixos kernel:   with environment:
+Jan 07 15:55:20 nixos kernel:     HOME=/
+Jan 07 15:55:20 nixos kernel:     TERM=Linux
+```
+
+### Kernel Parameters
+
+- text-based
+- To view parameters passed to currently running kernel: `/proc/cmdline`
+- `ro` - mount root filesystem in read-only mode
+  - easier for `fsck` to check
+  - then remounts root filesystem in read-write mode
+
+### Boot Loaders
+
+- Loads the kernel into memory from somewhere on a disk and then starts with a set of kernel parameters
+- To access the disk
+  - uses BIOS (Basic Input/Output System) or **UEFI** (Unified Extensible Firmware Interface)
+  - BIOS/UEFI uses **Logical Block Addressing (LBA)** to access attached storage hardware
+
+### GRUB
+
+- Filesystem navigation
+- `initrd` - filesystem of RAM
+- the GRUB **root**
+  - filesystem where GRUB searches for kernel and RAM filesystem image files
+
+### UEFI
+
+- **secure boot**
+- supports installing _multiple_ boot loaders in the EFI partition
+
+### Chainloading Other OS
+
+- provided by GRUB
+
+### Boot Loader Details
+
+- **MBR** & **UEFI**
+
+#### MBR Boot
+
+- **multistage boot loader**
+
+#### UEFI Boot
+
+- GPT partitioning scheme is part of UEFI
+- always a special VFAT filesystem called **EFI System Partition (ESP)**
+  - contains a directory **EFI**
+  - mounted at `/boot/efi`
