@@ -682,3 +682,75 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
 - always a special VFAT filesystem called **EFI System Partition (ESP)**
   - contains a directory **EFI**
   - mounted at `/boot/efi`
+
+## How User Space Starts
+
+- Roughly in the order of:
+  1. init
+  2. essential low-level services - udevd, syslogd, etc
+  3. network configuration
+  4. mid- & high-level services (cron, printing, etc)
+  5. login prompts, GUIs, high-level applications (web servers etc)
+
+### init
+
+- main purpose: to start/stop essential service processes
+- standard implementation: **systemd**
+- `/etc/systemd/`
+
+### systemd
+
+- advanced service management capabilities:
+  - manage file system mounts
+  - monitor network connection requests
+  - run timers
+- **unit**: each specific function
+- **unit type**: each capability
+- Most significant unit types:
+  - **service units**
+  - **target units**
+  - **socket units**
+  - **mount units**
+
+#### Booting
+
+- activating a _default_ unit - `default.target`
+- `systemd-analyze dot` - create dependency graph
+
+#### systemd config
+
+- two main locations:
+  - **system unit**: `/lib/systemd/system` or `/usr/lib/systemd/system`
+  - **system configuration**: `/etc/systemd/system/`
+- To check current systemd config search path: `systemctl -p UnitPath show`
+- Unit files
+
+#### Operation
+
+- through `systemctl`
+- `systemctl list-units`
+  - default command
+  - `--full`
+  - `--all`
+- To view _all_ of a unit's messages:
+  - `journalctl --unit=<unit_name>`
+
+#### systemd dependencies
+
+- `Requires` vs. `Wants`
+
+#### systemd on-demand and resource-parallelized startup
+
+- `<name>@.service` supports _multiple simultaneous_ instances
+
+### Shutting Down
+
+- controlled by init
+- if `shutdown` other than `now`
+  - creates a `/etc/nologin`
+
+### Initial RAM Filesystem
+
+- **initramfs**
+- `initrd`
+-
