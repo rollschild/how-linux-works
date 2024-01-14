@@ -753,4 +753,91 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
 
 - **initramfs**
 - `initrd`
+
+## System Time, Batch Jobs, and Users
+
+- `/etc/` - system's configuration
+
+### System Logging
+
+- **syslog**
+  - replaced by **journald**
+- **rsyslogd**
+  - `/etc/rsyslog.conf`
+- `journalctl`
+  - `journalctl -S -4h` - since the last 4hr
+  - `-U` - until
+  - `-u` - filter by unit `<name>.service`
+  - `journalctl -g 'kernel.*memory'` - search by text
+  - `journalctl -b` - since the start of current boot
+  - `journalctl -b -1` - since the start of previous boot
+  - `-f` - print logs as they arrive - live feed
+- `logrotate`
+
+### Structure of `/etc/`
+
+- for system configuration files
+- Guideline: customizable configurations for a single machine
+  - user information, `/etc/passwd`
+  - network details `/etc/network`
+- Nowadays passwords are stored in the **shadow** file, `/etc/shadow`
+- **pseudo-users**: users that cannot log in
+- **Pluggable Authentication Modules (PAM)**
+- To add/remove users,
+  - `adduser`
+  - `userdel`
+- To _directly_ edit `/etc/passwd`
+  - `vipw` - backs up and locks `/etc/passwd`
+  - `vipw -s` - modifies `/etc/shadow` directly
+
+### `getty`
+
+- attaches to terminals and displays a login prompt
+- After entering the login name,
+  - `getty` replaces itself with `login` program, asking for password
+  - if correct password entered, `login` replaces itself (using `exec()`) with your shell
+- Much of the `login` program's real authentication work is handled by **PAM**
+
+### Time
+
+- **system clock** - maintained by kernel
+- **Real-Time Clock (RTC)**
+  - battery-backed
+  - included in PC hardware
+  - kernel sets its time based on RTC at boot time
+- **time drift** - corrected by `adjtimex`
+- `tzselect`
+- **Network Time Protocol (NTP)**
+  - used to be handled by **ntpd** daemon, but replaced by systemd's **timesyncd**
+
+### Scheduling Recurring Tasks with cron and Timer Units
+
+- systemd's **timer units** are alternative to cron
+
+### `at`
+
+- run job _once_ in the future
+- `atq` - check the scheduled job
+- to remove scheduled jobs, `atrm`
+- `systemd-run`
+
+### Timer Units Running as Regular Users
+
+- `systemd-run --user`
+- to keep the user manager around after logging out: `loginctl enable-linger`
+
+### User Access
+
+- **effective user ID (euid)** vs. **real user ID (ruid)**
+  - euid: access rights for a process (e.g. file permissions)
+    - _actor_ of a process
+  - ruid: who initiated a process
+    - _owner_ of a process
+- when a setuid program is being run, Linux sets euid to the program's owner during execution
+- `sudo` (and many other setuid programs) explicitly change the euid _and_ ruid with one of the `setuid()` syscalls
+
+### Pluggable Authentication Modules
+
+- by Sun
+- dynamically loadable **authentication modules**
 -
