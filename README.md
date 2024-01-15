@@ -840,4 +840,98 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
 
 - by Sun
 - dynamically loadable **authentication modules**
--
+
+## Processes And Resource Utilization
+
+### Tracking Processes
+
+- `top`
+  - send keystrokes within `top` to change view
+  - _case-sensitive_
+
+### Finding Open Files with `lsof`
+
+- `lsof` - list open files and processes using them
+
+### Tracing Program Execution and System Calls
+
+- `strace` - system call trace
+  - begins working on the _new_ process (the copy of the original process) just after the `fork()` call
+  - can be used on daemons that fork/detach themselves
+- `ltrace` - library trace
+  - does _not_ track anything on kernel level
+  - many _more_ shared lib calls than sys calls
+
+### Threads
+
+- _all_ threads inside a single process share their system resources and _some_ memory
+- separate processes _usually_ do _not_ share system resources
+  - memory
+  - I/O
+- multiple threads (within a process) can run _simultaneously_ on multiple processors
+- threads start _faster_ than processes
+- threads (within a process) intercommunicate faster
+  - shared memory
+
+#### Viewing Threads
+
+- `ps` and `top` by default _only_ show processes
+  - `ps m` to show threads
+
+### Resource Monitoring
+
+- `top -p <pid1> [-p pid2 ...]` - monitor one/more specific processes _over time_
+- `time` - how much CPU time a command uses during its lifetime
+  - system's version: `/usr/bin/time`
+- `user` - number of seconds the CPU has spent during the program's own code
+- `sys`/`system` - how much time the kernel spends doing the process's work
+- `real` - **elapsed time**
+  - total time from start to finish
+  - including CPU time doing other tasks
+- `top`
+  - `PR` column - priority
+  - nice value - how nice you are being to other processes
+- `renice <nice_value> <pid>`
+- **load average**
+  - average number of processes currently ready to run
+  - if it's `1`, a single process is probably using the CPU nearly all of the time
+- To check memory usage status:
+  - `free`
+  - view `/proc/meminfo` - how much memory is being used for caches and buffers
+- How memory works
+  - CPU has a memory management unit (MMU) to add flexibility to memory access
+  - kernel assists MMU by breaking down the memory _used by processes_ into smaller chunks, **pages**
+  - kernel maintains **page table**
+    - mapping a process's virtual page addresses to real page addresses in memory
+  - as process accessing memory, MMU translates the virtual addresses (used by process) into real addresses based on the kernel's page table
+- **on-demand paging**, a.k.a. **demand paging**
+  - kernel loads & allocates pages as a process needs them
+- `getconf PAGE_SIZE` - system's page size
+  - `4096`, or 4k, on most Linux distros
+- Page faults
+  - minor
+  - major
+    - might occur when kernel needs to load the program from the disk (swap) the first time
+- `vmstat`
+- `iostat`
+- `iotop` - I/O resources used by individual processes
+  - processes using the most I/O
+  - displays _threads_ instead of processes
+  - scheduling classes:
+    - `be` - best effort, where most processes run under
+    - `rt` - real-time, higher priority than any other class
+    - `idle`
+- `ionice` - change I/O priority
+- `pidstat` - monitor resource consumption of a process _over time_
+
+### Control Groups
+
+- **cgroup** - a kernel feature
+  - in kernel space
+  - does _NOT_ depend on systemd
+- **controllers** - how the processes within one cgroup behave
+  - `cpu`
+  - `memory`
+- `/proc/<pid>/cgroup` - view the cgroup file
+- `/sys/fs/cgroup/` - view cgroups
+- see the current resource utilization in this cgroup - `cat cpu.stat`
