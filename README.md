@@ -935,3 +935,117 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
 - `/proc/<pid>/cgroup` - view the cgroup file
 - `/sys/fs/cgroup/` - view cgroups
 - see the current resource utilization in this cgroup - `cat cpu.stat`
+
+## Network and Its Configuration
+
+### Packets
+
+- **packet**
+  - **header**
+  - **payload**
+
+### Network Layers
+
+- in Linux, **transport layer** and all layers below are _primarily_ handled by the kernel
+
+### Internet Layer
+
+- `ip address show` - to view your IP
+  - look at `inet` for IPv4 address
+- **Classless Inter-Domain Routing (CIDR)**
+  - number of _leading_ `1`s in the subnet mask
+
+### Routes and the Kernel Routing Table
+
+- `ip route show` - to view the routing table
+
+### Default Gateway
+
+- `default` in the routing table - matches _any_ address on Internet
+  - `0.0.0.0/24` for IPv4
+- **default gateway** - as intermediary for the default route
+- kernel _always_ picks the route with the longest destination prefix that matches
+  - CIDR
+
+### IPv6
+
+- **subnet** & **interface ID**
+- Hosts normally have _at least two addresses_
+  - **global unicast address**
+  - **link-local address**
+- `ip -6 address show`
+  - `scope global`
+  - `scope link`
+- `ip -6 route show`
+
+### ICMP and DNS
+
+- `ping` - send ICMP echo request
+- `host` - find the IP behind a domain name
+
+### Kernel Network Interfaces
+
+- **predictable network interface device**
+- at boot time, interfaces have traditional names `eth0` and `wlan0`
+  - but quickly renamed on systemd machines
+- **link/ether** - MAC address
+
+### Resolving Hostnames
+
+- DNS is in the application layer, entirely user space
+- check for manual override in `/etc/hosts`, _before_ going DNS
+- `/etc/resolv.conf`
+  - traditional config file for DNS server
+- DNS caching
+  - `systemd-resolved` - routers acting as name servers
+  - BIND - the standard Unix name server daemon
+- `resolvectl status` - check the current DNS settings
+- `/etc/nsswitch.conf`
+  - traditional interface for controlling several name-related precedence settings
+  - `hosts:    files dns`
+  - make sure `/etc/hosts` is as short as possible
+  - RULE:
+    > If a particular host has a DNS entry, it has _NO_ place in `/etc/hosts`
+
+### Localhost
+
+- `lo` - virtual network interface, **loopback**
+
+### TCP and UDP
+
+- `netstat -nt` - view active connections
+  - `-n` - disables DNS
+  - `-t` - limits output to TCP
+- `/etc/services` - file for well known ports
+- on Linux, _only_ processes running as _superuser_ can use ports 1 through 1023
+- UDP
+  - defines transport _only_ for single messages
+  - _NO_ data stream
+  - has ports
+  - _NO_ connections
+  - _does_ have error detection _inside_ a packet
+    - but does _NOT_ have to do anything about it
+
+### DHCP
+
+- You get:
+  - IP address
+  - subnet mask
+  - default gateway
+  - DNS server
+- when making an initial DHCP request, a host _broadcasts_ the request to _all_ hosts (on its physical network)
+  - since it does not know the address of its DHCP server
+
+#### Linux DHCP Clients
+
+- `dhclient` - traditional
+  - stores its PID in `/var/run/dhclient.pid`
+  - stores lease info in `/var/lib/dhcp/dhclient.leases`
+- systemd-networkd has a built-in DHCP client
+
+### Ethernet, IP, ARP, and NDP
+
+- **Address Resolution Protocol (ARP)**
+  - maintains a small table, ARP cache
+  - maps IP addresses to MAC addresses
+  - in the kernel
