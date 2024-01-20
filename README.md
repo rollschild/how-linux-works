@@ -1049,3 +1049,49 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
   - maintains a small table, ARP cache
   - maps IP addresses to MAC addresses
   - in the kernel
+
+## Network Applications and Services
+
+- `lsof` - list programs currently using or listening to ports
+  - `-n` - disable resolution
+  - `lsof -i:<port>` - filter by port
+  - `lsof -i<protocol>@<host>:<port>`
+- `tcpdump`
+  - puts the network interface card into **promiscuous mode**
+  - reports on every packet that comes across
+  - `tcpdump tcp`
+  - Wireshrak - GUI alternative
+- `netcat` or `nc`
+- `nmap` - network mapper
+  - scans _all_ ports on a machine or network of machines, looking for open ports
+
+### Remote Procedure Calls
+
+- **RPC** - remote procedure call
+- where a client program calls functions that execute on a remote server
+
+### Network Security
+
+- The following services should _always_ be deactivated:
+  - **ftpd**
+  - **telnetd**
+  - **rlogind**
+  - **rexecd**
+
+### Network Sockets
+
+- On Unix, a process uses a **socket** to identify when & how it's talking to the network
+- **sockets** - the interface that processes use to access the network through kernel
+  - boundary between user space & kernel space
+- `SOCK_STREAM` - stream sockets for TCP
+- `SOCK_DGRAM` - datagram sockets for UDP
+
+### Unix Domain Sockets
+
+- special kind of socket
+- when a process connects to a Unix domain socket,
+  - it can listen for and accept connections on the socket
+- _NOT_ a network socket
+  - _NO_ network behind it
+- **D-BUS**
+- `lsof -U` - view Unix domain sockets currently in use
