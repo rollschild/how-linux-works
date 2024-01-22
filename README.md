@@ -1095,3 +1095,48 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
   - _NO_ network behind it
 - **D-BUS**
 - `lsof -U` - view Unix domain sockets currently in use
+
+## Network File Transfer and Sharing
+
+### Quick Copy
+
+- `python -m SimpleHTTPServer`
+- `scp -r <directory> <user>@<remote_host>[:dest_dir]`
+
+### rsync
+
+- `rsync -nva dir host:dest_dir` - copy a directory to a different dir on remote host
+  - `-a` - all files
+  - `-n` - dry run mode
+  - `-v` - verbose
+- _NOTE_ the different between slash and no-slash!
+  - `dir` vs `dir/`
+
+### SSHFS
+
+- `sshfs username@host:dir mountpoint`
+  - user-space filesystem
+  - to unmount: `fusermount -u <mountpoint>`
+
+### NFS
+
+- commonly used traditional systems for file sharing among UNIX systems
+- can be served over TCP & UDP
+
+## User Env
+
+- `/usr/bin/` - where most Linux distros install executables
+- For a user's own shell scripts
+  - `$HOME/bin`
+  - `$HOME/.local/bin`
+- You should _NEVER_ put a dot (`.`) at the _front_ of the path
+- `$MANPATH`
+- **login shell** vs. **non-login shell**
+- `$-` - current set of options in the current shell
+- `tcsh`
+- `$PAGER` - default to `less`
+- startup file pitfalls
+  - do _NOT_ set `$DISPLAY` env variable in a shell startup file
+  - do _NOT_ set terminal type in a shell startup file
+  - _NEVER_ set `$LD_LIBRARY_PATH` in a shell startup file
+-
