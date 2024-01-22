@@ -1139,4 +1139,65 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
   - do _NOT_ set `$DISPLAY` env variable in a shell startup file
   - do _NOT_ set terminal type in a shell startup file
   - _NEVER_ set `$LD_LIBRARY_PATH` in a shell startup file
--
+
+## Linux Desktop
+
+### Desktop Components
+
+- **Framebuffer**
+  - fundamental of any graphical display mechanism
+  - a chunk of memory that the graphics hardware reads and transmits to screen for display
+
+#### X Window System
+
+- X **client** programs handle UI
+- X **server** serves as kernel, managing
+  - rendering windows
+  - configuring displays
+  - handling input from devices
+
+#### Wayland
+
+- **decentralized** by design
+- each client gets:
+  - its own memory buffer for its own window
+  - **compositor**
+
+### Wayland
+
+- Wayland refers to a **communication protocol** between compositing window manager and graphical client program
+- `$WAYLAND_DISPLAY` - unix domain socket for communication with clients
+  - found in `/run/user/<uid>/`
+- `libinput` - inspect input devices & events as they are presented by kernel
+
+#### X Compatibility in Wayland
+
+- Two approaches:
+  - add Wayland support to the app
+  - run X app through a compatibility layer in Wayland
+    - `Xwayland`
+
+### X
+
+- **X display**
+- On Linux, X server runs on a virtual terminal
+- can run clients across a network to a server running on a different machine directly over the network
+  - X server listening for TCP connections on port 6000
+- X Events
+  - `xev`
+
+### D-Bus
+
+- **Desktop Bus** - a message-passing system
+- interprocess communication mechanism
+  - allows desktop apps to talk to each other
+- `dbus-daemon` - central hub
+  - accepts and retransmits events
+- Two kinds of `dbus-daemon` instances (processes)
+  - the **system instance**
+    - started by init at boot time
+    - processes connect to it through `/var/run/dbus/system_bus_socket` UNIX domain socket
+  - the **session instance**
+    - optional
+    - runs _only when_ a desktop session is started
+    - desktop apps connect to this instance
