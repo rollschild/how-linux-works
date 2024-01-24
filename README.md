@@ -1201,3 +1201,50 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
     - optional
     - runs _only when_ a desktop session is started
     - desktop apps connect to this instance
+
+## Development Tools
+
+- `ld` - run the linker
+  - creates executable from object files
+  - `cc -l<lib>` - link against a library
+    - note there is no space between `-l` and `<lib>`
+  - `cc -L<non-stardard-lib>`
+- `nm --defined-only <lib>` - search a lib for a particular function
+- `libc.a` - basic file in the standard C lib
+- `<lib>.a` - **static** library
+  - linker copies necessary machine code from lib file into executable
+- **shared** libraries - only **references** to names in the code of the lib file
+  - when program is run, system loads the lib's code into the process memory space _only when_ necessary
+  - `.so`
+  - `ldd <program>` - to see what share libs a program uses
+    - output format: `<shared-lib-name> => <shared-lib-location>`
+  - `ld.so` - **runtime dynamic linker/loader**
+    - small program that finds & loads shared libs for a program at _runtime_
+    - provides right side of `=>` from output of `ldd`
+- How `ld.so` finds shared libs
+  - first place to look at: executable's runtime library search path (**rpath**)
+  - next: system cache, `/etc/ld.so.cache`
+    - fast cache of names of lib files found in the **cache configuration file**, `/etc/ld.so.conf`
+      - you should _NOT_ modify it
+    - if `/etc/ld.so.conf` altered, need to rebuild `/etc/ld.so.cache` by doing `ldconfig -v`
+  - another place: `LD_LIBRARY_PATH`
+- To link shared libs
+  - `cc -o <exec> <exec.o> -Wl,-rpath=<path-to-shared-lib> -L<path-to-shared-lib>`
+  - `-Wl,-rapth` tells linker to include the specified dir into executable's lib search path
+  - `-L` is _still_ needed
+- `patchelf` - change the runtime lib search path of an _existing_ binary
+  - although better done at compile time
+  - **ELF (Executable and Linkable Format)**
+- _NEVER_ set `LD_LIBRARY_PATH` in shell startup files or when compiling software
+  - if you _have to_ set it, do it in a wrapper script
+- Working with header (include) files and dirs
+  - `/usr/include` - default include dir
+  - `cc -c -I/<path-to-include-dir> <file>.c`
+- `#include "header.h"` vs. `#include <header.h>`
+  - double quotes - the header file is _not_ in a system include directory
+- Preprocessor
+  - passing the compiler `-D<MACRO_NAME>=<value>` === `#define <MACRO_NAME> <value>`
+- **Lex**: a **tokenizer** that transforms text into numbered tags with labels
+  - `flex` - the GNU version
+- **Yacc**: a **parser** that attempts to read tokens according to a **grammar**
+  - `bison` - GNU version
