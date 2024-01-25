@@ -1248,3 +1248,35 @@ Jan 07 15:55:20 nixos kernel:     TERM=Linux
   - `flex` - the GNU version
 - **Yacc**: a **parser** that attempts to read tokens according to a **grammar**
   - `bison` - GNU version
+
+## Virtualization
+
+### Virtual Machines
+
+- **system virtual machine**
+  - IBM mainframe
+- **Hypervisor**
+  - manages one/more virtual machines
+  - Two types:
+    - **type 1 hypervisor**
+      - similar to an OS
+      - with kernel
+      - **Xen**
+    - **type 2 hypervisor**
+- **host** vs. **guest**
+- **paravirtualization**
+- Virtual machine CPU modes
+  - kernel mode vs. user mode
+  - hypervisor can detect & react to (**trap**) any restricted instructions coming from a virtual machine
+  - hypervisor can emulate the restricted instructions, enabling VMs to run in kernel mode
+
+### Containers
+
+- lighter weight than VM
+- service isolation
+  - `chroot()` - change root dir to something other than actual sys root
+    - **chroot jail**
+- **container**: a restricted runtime env for a set of processes
+  - the processes _cannot_ touch anything on the system outside the env
+  - **OS level virtualization**
+- docker vs podman
